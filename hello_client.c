@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2021-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2021-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -191,6 +191,35 @@ static void hello_client_gatt_enable_notification(void);
 static wiced_bool_t hello_client_is_device_bonded(wiced_bt_device_address_t bd_address);
 static int hello_client_is_master(wiced_bt_device_address_t bda);
 
+#define opcode_vsc_set_s_8_on_connection 0x01B7
+
+/*******************************************************************************
+ * Function Name: set_s_8_on_connection
+ ********************************************************************************
+ * Summary:
+ * Send Vendor Specific Command to use S=8 coded PHY
+ *
+ * Parameters:
+ *  None
+ *
+ * Return
+ *  wiced_bt_dev_status_t  Result from BT_RESULT_LIST
+ *
+ *******************************************************************************/
+wiced_bt_dev_status_t set_s_8_on_connection(void)
+{
+    wiced_bt_dev_status_t bt_status = WICED_BT_ERROR;
+    uint8_t buffer[] = {0x01};
+
+    bt_status = wiced_bt_dev_vendor_specific_command(opcode_vsc_set_s_8_on_connection, sizeof(buffer), buffer, NULL);
+    if (bt_status != WICED_BT_PENDING)
+    {
+        return bt_status;
+    }
+
+    return WICED_BT_SUCCESS;
+}
+
 void usr_btn_interrupt_handler(void)
 {
     // if connected, switch coding algorithms
@@ -200,21 +229,30 @@ void usr_btn_interrupt_handler(void)
         wiced_bt_ble_phy_preferences_t phy_pref = {0};
 
         memcpy((void *)phy_pref.remote_bd_addr, (void *)g_hello_client.peer_info[0].peer_addr, BD_ADDR_LEN);
-        phy_pref.phy_opts = (g_hello_client.is_s8_coding_active) ? BTM_BLE_PREFER_LELR_125K : BTM_BLE_PREFER_LELR_512K;
+        /* Switch mode to S2 if state is in S8 and vice versa */
+        phy_pref.phy_opts = (g_hello_client.is_s8_coding_active) ? BTM_BLE_PREFER_LELR_S2 : BTM_BLE_PREFER_LELR_S8;
         phy_pref.tx_phys = BTM_BLE_PREFER_LELR_PHY;
         phy_pref.rx_phys = BTM_BLE_PREFER_LELR_PHY;
 
         wiced_bt_ble_set_phy(&phy_pref);
 
+        g_hello_client.is_s8_coding_active ^= 1;
         printf("Switching for LE LR PHY coding [is_s8_coding_active : %d] \n",
                g_hello_client.is_s8_coding_active);
-        g_hello_client.is_s8_coding_active ^= 1;
     }
     else
     {
-        printf("Start Scanning for Hello Sensor\n");
 
+#ifdef USE_S8_DEFAULT
+        printf("Set Encoding Scheme to S8\n");
+        set_s_8_on_connection();
+        g_hello_client.is_s8_coding_active = 1;
+#else
+        g_hello_client.is_s8_coding_active = 0;
+#endif
+        printf("Start Scanning for Hello Sensor\n");
         start_scan = 1;
+
         wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_HIGH_DUTY, WICED_TRUE, hello_client_scan_result_cback);
     }
 }
@@ -586,9 +624,6 @@ wiced_bt_gatt_status_t hello_client_gatt_connection_up(wiced_bt_gatt_connection_
     if (p_conn_status->link_role == HCI_ROLE_CENTRAL)
     {
         g_hello_client.conn_id = p_conn_status->conn_id;
-
-        // by default S=2 coding is used
-        g_hello_client.is_s8_coding_active = FALSE;
 
         /* Configure to receive notification from server */
         hello_client_gatt_enable_notification();
