@@ -19,7 +19,7 @@ This README covers the GATT Client application in detail.
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-btstack-freertos-le-lr-central)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzY1OTYiLCJTcGVjIE51bWJlciI6IjAwMi0zNjU5NiIsIkRvYyBUaXRsZSI6IkFJUk9DJnRyYWRlOzogQmx1ZXRvb3RoJnJlZzsgTEUgTG9uZyBSYW5nZSBDZW50cmFsIiwicmlkIjoidC4gdW5kYXZhbGxpIiwiRG9jIHZlcnNpb24iOiIxLjEuMCIsIkRvYyBMYW5ndWFnZSI6IkVuZ2xpc2giLCJEb2MgRGl2aXNpb24iOiJNQ0QiLCJEb2MgQlUiOiJJQ1ciLCJEb2MgRmFtaWx5IjoiQlRBQkxFIn0=)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzY1OTYiLCJTcGVjIE51bWJlciI6IjAwMi0zNjU5NiIsIkRvYyBUaXRsZSI6IkFJUk9DJnRyYWRlOzogQmx1ZXRvb3RoJnJlZzsgTEUgTG9uZyBSYW5nZSBDZW50cmFsIiwicmlkIjoidC4gdW5kYXZhbGxpIiwiRG9jIHZlcnNpb24iOiIxLjIuMCIsIkRvYyBMYW5ndWFnZSI6IkVuZ2xpc2giLCJEb2MgRGl2aXNpb24iOiJNQ0QiLCJEb2MgQlUiOiJJQ1ciLCJEb2MgRmFtaWx5IjoiQlRBQkxFIn0=)
 
 
 ## Requirements
@@ -191,7 +191,10 @@ For a list of supported IDEs and more details, see the "Exporting to IDEs" secti
 
 7. To switch between S2 and S8 coding schemes, press the user button on the central board.
 
-**Note:** Changing the S2/S8 coding scheme on the central board does not automatically change the coding scheme on the peripheral board. Therefore, to ensure that both boards are using the same coding scheme, the user must press the user button on the peripheral board to match the coding scheme for both boards.
+**Notes:**
+1. Changing the S2/S8 coding scheme on the central board does not automatically change the coding scheme on the peripheral board. Therefore, to ensure that both boards are using the same coding scheme, the user must press the user button on the peripheral board to match the coding scheme for both boards.
+
+2. At present, 100% scan duty cycle is used. The parameters may be fine tuned as per requirement.
 
 ## Programming a CYW20829 board (when multiple boards are connected)
 
@@ -364,7 +367,7 @@ Version | Description of change
 ------- | ---------------------
 1.0.0   | New code example that only supports MTB 3.0
 1.1.0   | Added support for CYW920829M2EVK-02 <br> Removed CYW920829M2EVB-01 from supported kit
-
+1.2.0   | Set scan duty to %100
 
 ---------------------------------------------------------
 

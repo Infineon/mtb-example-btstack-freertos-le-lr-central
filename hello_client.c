@@ -504,12 +504,12 @@ void hello_client_app_init(void)
     wiced_bt_ble_set_default_phy(&phy_preferences);
 
     scan_cfg.scanning_phys = WICED_BT_BLE_EXT_ADV_PHY_LE_CODED_BIT;
-    scan_cfg.duration = 30 * 100; // 3000*10ms=30s
+    scan_cfg.duration = 60 * 100; // 6000*10ms=60s
     scan_cfg.period = 0;          // scan continuously
 
     scan_cfg.enc_phy_scan_type = 1;   // active scan
-    scan_cfg.enc_phy_scan_int = 2048; // 2048*0.625ms = 1.28s
-    scan_cfg.enc_phy_scan_win = 18;   // 18*0.625ms = 11.25ms
+    scan_cfg.enc_phy_scan_int = 100;  // 100*0.625ms = 62.5ms
+    scan_cfg.enc_phy_scan_win = 100;  // 100*0.625ms = 62.5ms
 
     result = wiced_bt_ble_cache_ext_scan_config(&scan_cfg);
 
@@ -520,7 +520,7 @@ void hello_client_app_init(void)
     conn_cfg.initiating_phys = WICED_BT_BLE_EXT_ADV_PHY_LE_CODED_BIT;
 
     conn_cfg.scan_int[0] = conn_cfg.scan_int[1] = conn_cfg.scan_int[2] = 100;                    // 100*0.625ms=62.5ms
-    conn_cfg.scan_window[0] = conn_cfg.scan_window[1] = conn_cfg.scan_window[2] = 50;            // 50*0.625ms=31.25ms
+    conn_cfg.scan_window[0] = conn_cfg.scan_window[1] = conn_cfg.scan_window[2] = 100;           // 100*0.625ms=62.5ms
     conn_cfg.min_conn_int[0] = conn_cfg.min_conn_int[1] = conn_cfg.min_conn_int[2] = 28;         // 28*1.25ms=35ms
     conn_cfg.max_conn_int[0] = conn_cfg.max_conn_int[1] = conn_cfg.max_conn_int[2] = 44;         // 44*1.25ms=55ms
     conn_cfg.conn_latency[0] = conn_cfg.conn_latency[1] = conn_cfg.conn_latency[2] = 0;          // number of connection events
