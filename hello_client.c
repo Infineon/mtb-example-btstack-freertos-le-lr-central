@@ -1,66 +1,70 @@
+
+/******************************************************************************
+* File Name: hello_client.c
+*
+* Description: This is the source code LE LR Central Application (GATT Client)
+*              LE Long Range Central Example for ModusToolbox.
+*
+* The GATT Client application is designed to connect and access services
+* of the Hello Sensor device using LE LR PHY. Because handles of the all attributes of
+* the Hello Sensor are well known, GATT Client does not perform GATT
+* discovery, but uses them directly.  GATT Client assumes
+* that Hello Sensor advertises a special UUID and connects to the device
+* which publishes it.
+*
+* Features demonstrated
+*  - Registration with LE stack for various events
+*  - Connection to a peripheral
+*  - As a master processing notifications from the server
+*  - Scan and connect to peer over LE Coded PHY
+*  - Ability to switch between S=2 / S=8 coding post connection
+*
+* To demonstrate the app, work through the following steps.
+* 1. Plug the AIROC eval board into your computer
+* 2. Build and download the application (to the AIROC board)
+* 3. Make sure that your slave device (hello_sensor) is up and advertising
+* 4. Push the user button on the board to start the connection process.
+* 5. Once connected, press the same user button again for 1 second to switch
+*    between S=2/S=8 PHY coding algorithms
+*
+* Related Document: See README.md
+*
+********************************************************************************
+* Copyright 2021-2023, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
+*
+* This software, including source code, documentation and related
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
+* worldwide patent protection (United States and foreign),
+* United States copyright laws and international treaty provisions.
+* Therefore, you may use this Software only as provided in the license
+* agreement accompanying the software package from which you
+* obtained this Software ("EULA").
+* If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
+* non-transferable license to copy, modify, and compile the Software
+* source code solely for use in connection with Cypress's
+* integrated circuit products.  Any reproduction, modification, translation,
+* compilation, or representation of this Software except as specified
+* above is prohibited without the express written permission of Cypress.
+*
+* Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND,
+* EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. Cypress
+* reserves the right to make changes to the Software without notice. Cypress
+* does not assume any liability arising out of the application or use of the
+* Software or any product or circuit described in the Software. Cypress does
+* not authorize its products for use in any products where a malfunction or
+* failure of the Cypress product may reasonably be expected to result in
+* significant property damage, injury or death ("High Risk Product"). By
+* including Cypress's product in a High Risk Product, the manufacturer
+* of such system or application assumes all risk of such use and in doing
+* so agrees to indemnify Cypress against all liability.
+*******************************************************************************/
+
 /*******************************************************************************
- * Copyright 2021-2023, Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
- *
- * This software, including source code, documentation and related
- * materials ("Software") is owned by Cypress Semiconductor Corporation
- * or one of its affiliates ("Cypress") and is protected by and subject to
- * worldwide patent protection (United States and foreign),
- * United States copyright laws and international treaty provisions.
- * Therefore, you may use this Software only as provided in the license
- * agreement accompanying the software package from which you
- * obtained this Software ("EULA").
- * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
- * non-transferable license to copy, modify, and compile the Software
- * source code solely for use in connection with Cypress's
- * integrated circuit products.  Any reproduction, modification, translation,
- * compilation, or representation of this Software except as specified
- * above is prohibited without the express written permission of Cypress.
- *
- * Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. Cypress
- * reserves the right to make changes to the Software without notice. Cypress
- * does not assume any liability arising out of the application or use of the
- * Software or any product or circuit described in the Software. Cypress does
- * not authorize its products for use in any products where a malfunction or
- * failure of the Cypress product may reasonably be expected to result in
- * significant property damage, injury or death ("High Risk Product"). By
- * including Cypress's product in a High Risk Product, the manufacturer
- * of such system or application assumes all risk of such use and in doing
- * so agrees to indemnify Cypress against all liability.
- *******************************************************************************/
-
-/** @file
- *
- * LE LR Central Application (GATT Client)
- *
- * The GATT Client application is designed to connect and access services
- * of the Hello Sensor device using LE LR PHY. Because handles of the all attributes of
- * the Hello Sensor are well known, GATT Client does not perform GATT
- * discovery, but uses them directly.  GATT Client assumes
- * that Hello Sensor advertises a special UUID and connects to the device
- * which publishes it.
- *
- * Features demonstrated
- *  - Registration with LE stack for various events
- *  - Connection to a peripheral
- *  - As a master processing notifications from the server
- *  - Scan and connect to peer over LE Coded PHY
- *  - Ability to switch between S=2 / S=8 coding post connection
- *
- * To demonstrate the app, work through the following steps.
- * 1. Plug the AIROC eval board into your computer
- * 2. Build and download the application (to the AIROC board)
- * 3. Make sure that your slave device (hello_sensor) is up and advertising
- * 4. Push the user button on the board to start the connection process.
- * 5. Once connected, press the same user button again for 1 second to switch
- *    between S=2/S=8 PHY coding algorithms
- *
- */
-
-#include <string.h>
-
+ * Header Files
+ ******************************************************************************/
 #include "wiced_bt_ble.h"
 #include "wiced_bt_cfg.h"
 #include "wiced_bt_dev.h"
@@ -75,10 +79,16 @@
 #include "cybt_debug_uart.h"
 
 #include "cycfg_gap.h"
+#include "app_bt_bonding.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "hello_client.h"
 #include "user_btn.h"
-#include "app_bt_bonding.h"
+#include "user_oled.h"
+
 
 /*******************************************************************************
  * Macros
@@ -94,8 +104,8 @@
 
 #define __UUID_SERVICE_HELLO_SENSOR 0x38, 0x28, 0x2E, 0x5F, 0xA5, 0x1E, 0xC7, 0xA4, 0xC2, 0x46, 0x47, 0x74, 0xB6, 0xC7, 0x81, 0x2F
 #define HDLD_HELLO_SENSOR_NOTIFY_CHAR_DESC 0x000A
-
-/******************************************************************************
+#define OPCODE_VSC_SET_S8_ON_CONNECTION 0x01B7
+/*******************************************************************************
  *                                Structures
  ******************************************************************************/
 
@@ -190,8 +200,11 @@ static void hello_client_process_data_from_slave(int len, uint8_t *data);
 static void hello_client_gatt_enable_notification(void);
 static wiced_bool_t hello_client_is_device_bonded(wiced_bt_device_address_t bd_address);
 static int hello_client_is_master(wiced_bt_device_address_t bda);
+static void hello_client_rssi_cb(wiced_bt_dev_rssi_result_t *pdata);
 
-#define opcode_vsc_set_s_8_on_connection 0x01B7
+/*******************************************************************************
+* Function Definitions
+*******************************************************************************/
 
 /*******************************************************************************
  * Function Name: set_s_8_on_connection
@@ -211,7 +224,7 @@ wiced_bt_dev_status_t set_s_8_on_connection(void)
     wiced_bt_dev_status_t bt_status = WICED_BT_ERROR;
     uint8_t buffer[] = {0x01};
 
-    bt_status = wiced_bt_dev_vendor_specific_command(opcode_vsc_set_s_8_on_connection, sizeof(buffer), buffer, NULL);
+    bt_status = wiced_bt_dev_vendor_specific_command(OPCODE_VSC_SET_S8_ON_CONNECTION, sizeof(buffer), buffer, NULL);
     if (bt_status != WICED_BT_PENDING)
     {
         return bt_status;
@@ -220,6 +233,9 @@ wiced_bt_dev_status_t set_s_8_on_connection(void)
     return WICED_BT_SUCCESS;
 }
 
+/*
+ *  Interrupt handler for user button.
+ */
 void usr_btn_interrupt_handler(void)
 {
     // if connected, switch coding algorithms
@@ -239,6 +255,18 @@ void usr_btn_interrupt_handler(void)
         g_hello_client.is_s8_coding_active ^= 1;
         printf("Switching for LE LR PHY coding [is_s8_coding_active : %d] \n",
                g_hello_client.is_s8_coding_active);
+#ifdef USE_OLED_DISP
+        if(g_hello_client.is_s8_coding_active)
+        {
+            oled_printText(3, 5,"CODE = S8");
+        }
+        else
+        {
+            oled_printText(3, 5,"CODE = S2");
+        }
+
+#endif
+        cyhal_gpio_write(CYBSP_USER_LED1, 1 - g_hello_client.is_s8_coding_active);
     }
     else
     {
@@ -252,6 +280,12 @@ void usr_btn_interrupt_handler(void)
 #endif
         printf("Start Scanning for Hello Sensor\n");
         start_scan = 1;
+#ifdef USE_OLED_DISP
+        oled_printText(7, 88, "SCAN..");
+#endif
+        cyhal_gpio_write(CYBSP_LED_RGB_RED, CYBSP_LED_STATE_OFF);
+        cyhal_gpio_write(CYBSP_LED_RGB_GREEN, CYBSP_LED_STATE_OFF);
+        cyhal_gpio_write(CYBSP_LED_RGB_BLUE, CYBSP_LED_STATE_ON);
 
         wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_HIGH_DUTY, WICED_TRUE, hello_client_scan_result_cback);
     }
@@ -498,6 +532,14 @@ void hello_client_app_init(void)
 
     configure_user_btn(usr_btn_interrupt_handler);
 
+    /* Initialize the RGB LED */
+    cyhal_gpio_init(CYBSP_LED_RGB_RED, CYHAL_GPIO_DIR_OUTPUT,
+                    CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_ON);
+    cyhal_gpio_init(CYBSP_LED_RGB_GREEN, CYHAL_GPIO_DIR_OUTPUT,
+                    CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF);
+    cyhal_gpio_init(CYBSP_LED_RGB_BLUE, CYHAL_GPIO_DIR_OUTPUT,
+                    CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF);
+
     /* set the default PHY to LE Coded PHY */
     phy_preferences.rx_phys = BTM_BLE_PREFER_LELR_PHY;
     phy_preferences.tx_phys = BTM_BLE_PREFER_LELR_PHY;
@@ -518,6 +560,8 @@ void hello_client_app_init(void)
     memset(&conn_cfg, 0, sizeof(conn_cfg));
 
     conn_cfg.initiating_phys = WICED_BT_BLE_EXT_ADV_PHY_LE_CODED_BIT;
+    conn_cfg.adv_handle = 0x0FF;
+    conn_cfg.sub_event = 0x0FF;
 
     conn_cfg.scan_int[0] = conn_cfg.scan_int[1] = conn_cfg.scan_int[2] = 100;                    // 100*0.625ms=62.5ms
     conn_cfg.scan_window[0] = conn_cfg.scan_window[1] = conn_cfg.scan_window[2] = 100;           // 100*0.625ms=62.5ms
@@ -633,6 +677,12 @@ wiced_bt_gatt_status_t hello_client_gatt_connection_up(wiced_bt_gatt_connection_
         // Update the connection handle to the master
         g_hello_client.master_conn_id = p_conn_status->conn_id;
     }
+#ifdef USE_OLED_DISP
+    oled_printText(7, 5, "CONN STATUS = 1");
+#endif
+    cyhal_gpio_write(CYBSP_LED_RGB_BLUE, CYBSP_LED_STATE_OFF);
+    cyhal_gpio_write(CYBSP_LED_RGB_RED, CYBSP_LED_STATE_OFF);
+    cyhal_gpio_write(CYBSP_LED_RGB_GREEN, CYBSP_LED_STATE_ON);
 
     return WICED_BT_GATT_SUCCESS;
 }
@@ -658,7 +708,12 @@ wiced_bt_gatt_status_t hello_client_gatt_connection_down(wiced_bt_gatt_connectio
 
     // Remove the peer info
     hello_client_remove_peer_info(p_conn_status->conn_id);
-
+#ifdef USE_OLED_DISP
+    oled_printText(7, 5, "CONN STATUS = 0");
+#endif
+    cyhal_gpio_write(CYBSP_LED_RGB_BLUE, CYBSP_LED_STATE_OFF);
+    cyhal_gpio_write(CYBSP_LED_RGB_GREEN, CYBSP_LED_STATE_OFF);
+    cyhal_gpio_write(CYBSP_LED_RGB_RED, CYBSP_LED_STATE_ON);
     return WICED_BT_GATT_SUCCESS;
 }
 
@@ -718,6 +773,16 @@ wiced_bt_gatt_status_t hello_client_gatt_op_comp_cb(wiced_bt_gatt_operation_comp
     case GATTC_OPTYPE_NOTIFICATION:
         hello_client_process_data_from_slave(p_data->response_data.att_value.len,
                                              p_data->response_data.att_value.p_data);
+        if ((p_peer_info = hello_client_get_peer_information(p_data->conn_id)) != NULL)
+        {
+             wiced_bt_dev_read_rssi(p_peer_info->peer_addr, p_peer_info->transport, (wiced_bt_dev_cmpl_cback_t*) hello_client_rssi_cb);
+        }
+#ifdef USE_OLED_DISP
+        else
+        {
+            oled_printText(4, 5,"RSSI = --- ");
+        }
+#endif
         break;
 
     case GATTC_OPTYPE_INDICATION:
@@ -733,16 +798,34 @@ wiced_bt_gatt_status_t hello_client_gatt_op_comp_cb(wiced_bt_gatt_operation_comp
     UNUSED_VARIABLE(status);
     return WICED_BT_GATT_SUCCESS;
 }
-
+/*
+ * This function handles callback for rssi result event
+ */
+void hello_client_rssi_cb(wiced_bt_dev_rssi_result_t *pdata)
+{
+    char rssi_val[8]={'0'};
+    snprintf(rssi_val, sizeof(rssi_val),"%d", (int) pdata->rssi);
+#ifdef USE_OLED_DISP
+    oled_printText(4, 5,"RSSI =      ");
+    oled_printText(4, 50, rssi_val);
+#endif
+    printf("RSSI value is %d \r\n", pdata->rssi);
+}
 /*
  * This function handles notification/indication data received from the slave device
  */
 void hello_client_process_data_from_slave(int len, uint8_t *data)
 {
+    char lenar[4]={'0'};
     printf("hello_client_process_data_from_slave len:%d master conn_id:%d ccc:%d\n",
            len,
            g_hello_client.master_conn_id,
            g_hello_client.host_info.characteristic_client_configuration);
+    snprintf(lenar, sizeof(lenar),"%d", (int) len%100);
+#ifdef USE_OLED_DISP
+    oled_printText(5, 5,"DATA LEN =    ");
+    oled_printText(5, 75, lenar);
+#endif
 }
 
 /*
@@ -773,10 +856,17 @@ wiced_bt_gatt_status_t hello_client_gatt_req_cb(wiced_bt_gatt_attribute_request_
 /* The function invoked on timeout of app seconds timer. */
 void hello_client_app_timeout(WICED_TIMER_PARAM_TYPE arg)
 {
-    wiced_result_t status;
+    wiced_result_t status = WICED_BT_SUCCESS;
+    char time_value[5] = {'0'};
 
     g_hello_client.app_timer_count++;
     printf("[%s] Count: %ld\n", __FUNCTION__, (long)(g_hello_client.app_timer_count));
+
+    snprintf(time_value, sizeof(time_value),"%ld",(long) g_hello_client.app_timer_count);
+#ifdef USE_OLED_DISP
+    oled_printText(6, 5, "TIMER COUNT =     ");
+    oled_printText(6, 90,time_value);
+#endif
 
     if (start_scan && wiced_bt_ble_get_current_scan_state() == BTM_BLE_SCAN_TYPE_NONE)
     {
@@ -833,6 +923,9 @@ void hello_client_scan_result_cback(wiced_bt_ble_scan_results_t *p_scan_result, 
         printf("[%s] Found Hello Sensor\n", __FUNCTION__);
 
         start_scan = 0;
+#ifdef USE_OLED_DISP
+        oled_printText(7, 88, "0     ");
+#endif
 
         /* Stop the scan since the desired device is found */
         status = wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_NONE, WICED_TRUE, hello_client_scan_result_cback);

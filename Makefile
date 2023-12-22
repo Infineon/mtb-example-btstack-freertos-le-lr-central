@@ -81,6 +81,11 @@ ifeq ($(USE_S8_DEFAULT),1)
 DEFINES+=USE_S8_DEFAULT
 endif
 
+#Enable/Disable OLED display
+USE_OLED_DISP?=0
+ifeq ($(USE_OLED_DISP),1)
+DEFINES+=USE_OLED_DISP
+endif
 ################################################################################
 # Advanced Configuration
 ################################################################################
