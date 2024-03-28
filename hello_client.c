@@ -30,7 +30,7 @@
 * Related Document: See README.md
 *
 ********************************************************************************
-* Copyright 2021-2023, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -283,10 +283,11 @@ void usr_btn_interrupt_handler(void)
 #ifdef USE_OLED_DISP
         oled_printText(7, 88, "SCAN..");
 #endif
+#if (CY_TARGET_BOARD!=APP_CYW989829M2EVB_01)
         cyhal_gpio_write(CYBSP_LED_RGB_RED, CYBSP_LED_STATE_OFF);
         cyhal_gpio_write(CYBSP_LED_RGB_GREEN, CYBSP_LED_STATE_OFF);
         cyhal_gpio_write(CYBSP_LED_RGB_BLUE, CYBSP_LED_STATE_ON);
-
+#endif
         wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_HIGH_DUTY, WICED_TRUE, hello_client_scan_result_cback);
     }
 }
@@ -532,6 +533,7 @@ void hello_client_app_init(void)
 
     configure_user_btn(usr_btn_interrupt_handler);
 
+#if (CY_TARGET_BOARD!=APP_CYW989829M2EVB_01)
     /* Initialize the RGB LED */
     cyhal_gpio_init(CYBSP_LED_RGB_RED, CYHAL_GPIO_DIR_OUTPUT,
                     CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_ON);
@@ -539,7 +541,7 @@ void hello_client_app_init(void)
                     CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF);
     cyhal_gpio_init(CYBSP_LED_RGB_BLUE, CYHAL_GPIO_DIR_OUTPUT,
                     CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF);
-
+#endif
     /* set the default PHY to LE Coded PHY */
     phy_preferences.rx_phys = BTM_BLE_PREFER_LELR_PHY;
     phy_preferences.tx_phys = BTM_BLE_PREFER_LELR_PHY;
@@ -680,10 +682,11 @@ wiced_bt_gatt_status_t hello_client_gatt_connection_up(wiced_bt_gatt_connection_
 #ifdef USE_OLED_DISP
     oled_printText(7, 5, "CONN STATUS = 1");
 #endif
+#if (CY_TARGET_BOARD!=APP_CYW989829M2EVB_01)
     cyhal_gpio_write(CYBSP_LED_RGB_BLUE, CYBSP_LED_STATE_OFF);
     cyhal_gpio_write(CYBSP_LED_RGB_RED, CYBSP_LED_STATE_OFF);
     cyhal_gpio_write(CYBSP_LED_RGB_GREEN, CYBSP_LED_STATE_ON);
-
+#endif
     return WICED_BT_GATT_SUCCESS;
 }
 
@@ -711,9 +714,11 @@ wiced_bt_gatt_status_t hello_client_gatt_connection_down(wiced_bt_gatt_connectio
 #ifdef USE_OLED_DISP
     oled_printText(7, 5, "CONN STATUS = 0");
 #endif
+#if (CY_TARGET_BOARD!=APP_CYW989829M2EVB_01)
     cyhal_gpio_write(CYBSP_LED_RGB_BLUE, CYBSP_LED_STATE_OFF);
     cyhal_gpio_write(CYBSP_LED_RGB_GREEN, CYBSP_LED_STATE_OFF);
     cyhal_gpio_write(CYBSP_LED_RGB_RED, CYBSP_LED_STATE_ON);
+#endif
     return WICED_BT_GATT_SUCCESS;
 }
 

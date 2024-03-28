@@ -1,6 +1,6 @@
 # AIROC&trade;: Bluetooth&reg; LE Long Range Central
 
-The following two examples, when executed in parallel on two separate boards, demonstrate the use of LE Long Range PHY with Infineon AIROC&trade; CYW20829 Bluetooth&reg; devices.
+The following two examples, when executed in parallel on two separate boards, demonstrate the use of LE Long Range PHY with Infineon AIROC&trade; CYW20829/CYW89829 Bluetooth&reg; devices.
 
 1. **LE Long Range Central application (GATT Client):** This code example documented and demonstrated here, is designed to connect and access services of the 'Hello Sensor' device using LE LR PHY. Because handles of all the attributes of the Hello Sensor device are known beforehand, this GATT Client does not perform GATT discovery but uses them directly. The GATT Client assumes that the Hello Sensor device advertises a special UUID and connects to the device which publishes it.
 
@@ -19,14 +19,15 @@ This README covers the GATT Client application in detail.
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-btstack-freertos-le-lr-central)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzY1OTYiLCJTcGVjIE51bWJlciI6IjAwMi0zNjU5NiIsIkRvYyBUaXRsZSI6IkFJUk9DJnRyYWRlOzogQmx1ZXRvb3RoJnJlZzsgTEUgTG9uZyBSYW5nZSBDZW50cmFsIiwicmlkIjoidC4gdW5kYXZhbGxpIiwiRG9jIHZlcnNpb24iOiIyLjAuMCIsIkRvYyBMYW5ndWFnZSI6IkVuZ2xpc2giLCJEb2MgRGl2aXNpb24iOiJNQ0QiLCJEb2MgQlUiOiJJQ1ciLCJEb2MgRmFtaWx5IjoiQlRBQkxFIn0=)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzY1OTYiLCJTcGVjIE51bWJlciI6IjAwMi0zNjU5NiIsIkRvYyBUaXRsZSI6IkFJUk9DJnRyYWRlOzogQmx1ZXRvb3RoJnJlZzsgTEUgTG9uZyBSYW5nZSBDZW50cmFsIiwicmlkIjoiYXNyYSIsIkRvYyB2ZXJzaW9uIjoiMi4xLjAiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IkJUQUJMRSJ9)
 
 
 ## Requirements
 
 - [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.0 or later (tested with v3.0)
 - Board support package (BSP) minimum required version for:
-   - CYW920829M2EVK-02: v1.0.1
+   - CYW920829M2EVK-02: v1.0.2
+   - CYW989829M2EVB-01: v1.0.1
 - Programming language: C
 - Associated parts: All [AIROC&trade; CYW20829 Bluetooth&reg; LE SoC](https://www.infineon.com/cms/en/product/promopages/airoc20829/)
 
@@ -39,6 +40,7 @@ This README covers the GATT Client application in detail.
 ## Supported kits
 
 - [AIROC&trade; CYW920829M2EVK-02](https://www.infineon.com/cms/en/product/promopages/airoc20829/) (`CYW920829M2EVK-02`) – Default value of `TARGET`
+- [AIROC&trade; CYW89829 Bluetooth&reg; LE Evaluation Kit]() (`CYW989829M2EVB-01`)
 
 > **Note:** [CY8CKIT-028-SENSE](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-028-sense/) is required when **USE_OLED_DISP** is enabled in the Makefile, by default OLED display flag is disabled.
 
@@ -399,6 +401,7 @@ Version | Description of change
 1.2.0   | Set scan duty to %100
 1.3.0   | Setting adv_handle and sub_event to 0xFF in hello_client_app_init()<br> Update README to reflect minimum BSP support for CYW920829M2EVK-02 : v1.0.1
 2.0.0   | Enabling OLED display and RGB LED to show LE-LR status information 
+2.1.0   | Added support for CYW989829M2EVB-01 
 
 All referenced product or service names and trademarks are the property of their respective owners.
 
