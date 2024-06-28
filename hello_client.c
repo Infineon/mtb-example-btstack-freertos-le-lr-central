@@ -76,7 +76,7 @@
 #include "wiced_timer.h"
 
 #include "cyhal.h"
-#include "cybt_debug_uart.h"
+
 
 #include "cycfg_gap.h"
 #include "app_bt_bonding.h"

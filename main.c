@@ -54,7 +54,7 @@
 #include "cy_pdl.h"
 #include "cybsp.h"
 #include "cybsp_types.h"
-#include "cybt_debug_uart.h"
+
 #include "cybt_platform_config.h"
 #include "cybt_platform_hci.h"
 #include "cybt_platform_trace.h"
