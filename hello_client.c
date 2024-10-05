@@ -88,7 +88,9 @@
 #include "hello_client.h"
 #include "user_btn.h"
 #include "user_oled.h"
-
+#ifdef ENABLE_BT_SPY_LOG
+#include "cybt_debug_uart.h"
+#endif
 
 /*******************************************************************************
  * Macros
