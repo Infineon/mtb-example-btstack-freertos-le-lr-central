@@ -30,36 +30,33 @@
 * Related Document: See README.md
 *
 ********************************************************************************
-* Copyright 2021-2025, Cypress Semiconductor Corporation (an Infineon company) or
-* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
-*
-* This software, including source code, documentation and related
-* materials ("Software") is owned by Cypress Semiconductor Corporation
-* or one of its affiliates ("Cypress") and is protected by and subject to
-* worldwide patent protection (United States and foreign),
-* United States copyright laws and international treaty provisions.
-* Therefore, you may use this Software only as provided in the license
-* agreement accompanying the software package from which you
-* obtained this Software ("EULA").
-* If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
-* non-transferable license to copy, modify, and compile the Software
-* source code solely for use in connection with Cypress's
-* integrated circuit products.  Any reproduction, modification, translation,
-* compilation, or representation of this Software except as specified
-* above is prohibited without the express written permission of Cypress.
-*
-* Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND,
-* EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. Cypress
-* reserves the right to make changes to the Software without notice. Cypress
-* does not assume any liability arising out of the application or use of the
-* Software or any product or circuit described in the Software. Cypress does
-* not authorize its products for use in any products where a malfunction or
-* failure of the Cypress product may reasonably be expected to result in
-* significant property damage, injury or death ("High Risk Product"). By
-* including Cypress's product in a High Risk Product, the manufacturer
-* of such system or application assumes all risk of such use and in doing
-* so agrees to indemnify Cypress against all liability.
+ * (c) 2021-2026, Infineon Technologies AG, or an affiliate of Infineon
+ * Technologies AG. All rights reserved.
+ * This software, associated documentation and materials ("Software") is
+ * owned by Infineon Technologies AG or one of its affiliates ("Infineon")
+ * and is protected by and subject to worldwide patent protection, worldwide
+ * copyright laws, and international treaty provisions. Therefore, you may use
+ * this Software only as provided in the license agreement accompanying the
+ * software package from which you obtained this Software. If no license
+ * agreement applies, then any use, reproduction, modification, translation, or
+ * compilation of this Software is prohibited without the express written
+ * permission of Infineon.
+ *
+ * Disclaimer: UNLESS OTHERWISE EXPRESSLY AGREED WITH INFINEON, THIS SOFTWARE
+ * IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING, BUT NOT LIMITED TO, ALL WARRANTIES OF NON-INFRINGEMENT OF
+ * THIRD-PARTY RIGHTS AND IMPLIED WARRANTIES SUCH AS WARRANTIES OF FITNESS FOR A
+ * SPECIFIC USE/PURPOSE OR MERCHANTABILITY.
+ * Infineon reserves the right to make changes to the Software without notice.
+ * You are responsible for properly designing, programming, and testing the
+ * functionality and safety of your intended application of the Software, as
+ * well as complying with any legal requirements related to its use. Infineon
+ * does not guarantee that the Software will be free from intrusion, data theft
+ * or loss, or other breaches ("Security Breaches"), and Infineon shall have
+ * no liability arising out of any Security Breaches. Unless otherwise
+ * explicitly approved by Infineon, the Software may not be used in any
+ * application where a failure of the Product or any consequences of the use
+ * thereof can reasonably be expected to result in personal injury.
 *******************************************************************************/
 
 /*******************************************************************************
@@ -151,8 +148,6 @@ typedef struct
 
 typedef void (*pfn_free_buffer_t)(uint8_t *);
 
-extern wiced_bt_dev_status_t wiced_bt_ble_cache_ext_conn_config(wiced_bt_ble_ext_conn_cfg_t *p_ext_conn_cfg);
-
 /*******************************************************************************
  * Global Variables
  ********************************************************************************/
@@ -175,6 +170,41 @@ extern wiced_bt_cfg_ble_t hello_sensor_cfg_ble;
 
 wiced_timer_t hello_client_second_timer;
 
+wiced_ble_ext_scan_params_t scan_params =
+{
+    .own_addr_type = BLE_ADDR_PUBLIC,
+    .scanning_phys = WICED_BLE_EXT_ADV_PHY_LE_CODED_BIT,
+    .sp_le_coded_phy.scan_type = BTM_BLE_SCAN_MODE_ACTIVE,
+    .sp_le_coded_phy.scan_interval = WICED_BT_CFG_DEFAULT_HIGH_DUTY_SCAN_INTERVAL,
+    .sp_le_coded_phy.scan_window = WICED_BT_CFG_DEFAULT_HIGH_DUTY_SCAN_WINDOW
+};
+
+wiced_ble_ext_scan_enable_params_t scan_enable =
+{
+    .filter_duplicates = 1,
+    .scan_duration = 60 * 100, // 6000*10ms=60s
+    .scan_period = 0,          // scan continuously
+};
+
+wiced_ble_ext_conn_cfg_t conn_cfg =
+{
+    .adv_handle = 0xFF,
+    .sub_event = 0xFF,
+    .initiating_phys = WICED_BLE_EXT_ADV_PHY_LE_CODED_BIT,
+    .phy_options =
+    {
+        {},
+        {},
+        {.scan_int = 100,   // 100*0.625ms=62.5ms
+             .scan_window = 100,// 100*0.625ms=62.5ms
+             .min_conn_int = 28,// 28*1.25ms=35ms
+             .max_conn_int = 44,// 44*1.25ms=55ms
+             .conn_latency = 0,
+             .supervision_to = 1000, // 1000*10ms10s
+            },
+    }
+};
+
 /*******************************************************************************
  * Function Prototypes
  ********************************************************************************/
@@ -189,7 +219,7 @@ static wiced_bt_gatt_status_t hello_client_gatt_op_comp_cb(wiced_bt_gatt_operati
 static wiced_bt_gatt_status_t hello_client_gatt_req_cb(wiced_bt_gatt_attribute_request_t *p_data);
 
 static void hello_client_app_timeout(WICED_TIMER_PARAM_TYPE arg);
-static void hello_client_scan_result_cback(wiced_bt_ble_scan_results_t *p_scan_result, uint8_t *p_adv_data);
+static void hello_client_ext_scan_result_cback(wiced_ble_ext_scan_results_t *p_scan_result, uint16_t adv_data_len, uint8_t *p_adv_data);
 static void hello_client_encryption_changed(wiced_result_t result, uint8_t *p_bd_addr);
 static void hello_client_add_peer_info(uint16_t conn_id,
                                        uint8_t *p_bd_addr,
@@ -272,6 +302,7 @@ void usr_btn_interrupt_handler(void)
     }
     else
     {
+        wiced_bt_dev_status_t status;
 
 #ifdef USE_S8_DEFAULT
         printf("Set Encoding Scheme to S8\n");
@@ -290,7 +321,11 @@ void usr_btn_interrupt_handler(void)
         cyhal_gpio_write(CYBSP_LED_RGB_GREEN, CYBSP_LED_STATE_OFF);
         cyhal_gpio_write(CYBSP_LED_RGB_BLUE, CYBSP_LED_STATE_ON);
 #endif
-        wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_HIGH_DUTY, WICED_TRUE, hello_client_scan_result_cback);
+        status = wiced_ble_ext_scan_enable(1, &scan_enable);
+        if (WICED_SUCCESS != status)
+        {
+            printf("Error start scanning\n");
+        }
     }
 }
 
@@ -494,8 +529,6 @@ void hello_client_app_init(void)
     int index;
     wiced_bt_gatt_status_t gatt_status;
     wiced_result_t result;
-    wiced_bt_ble_ext_scan_config_t scan_cfg;
-    wiced_bt_ble_ext_conn_cfg_t conn_cfg;
     wiced_bt_ble_phy_preferences_t phy_preferences;
 
     printf("hello_client_app_init\n");
@@ -549,32 +582,21 @@ void hello_client_app_init(void)
     phy_preferences.tx_phys = BTM_BLE_PREFER_LELR_PHY;
     wiced_bt_ble_set_default_phy(&phy_preferences);
 
-    scan_cfg.scanning_phys = WICED_BT_BLE_EXT_ADV_PHY_LE_CODED_BIT;
-    scan_cfg.duration = 60 * 100; // 6000*10ms=60s
-    scan_cfg.period = 0;          // scan continuously
+    /* Register for extended ADV events */
+    result = wiced_ble_ext_scan_register_cb(hello_client_ext_scan_result_cback);
+    if (WICED_SUCCESS != result)
+    {
+        printf("Error extended scan register callback\n");
+        CY_ASSERT(0);
+    }
 
-    scan_cfg.enc_phy_scan_type = 1;   // active scan
-    scan_cfg.enc_phy_scan_int = 100;  // 100*0.625ms = 62.5ms
-    scan_cfg.enc_phy_scan_win = 100;  // 100*0.625ms = 62.5ms
-
-    result = wiced_bt_ble_cache_ext_scan_config(&scan_cfg);
-
-    printf("[%s] Result: %d\n", __FUNCTION__, result);
-
-    memset(&conn_cfg, 0, sizeof(conn_cfg));
-
-    conn_cfg.initiating_phys = WICED_BT_BLE_EXT_ADV_PHY_LE_CODED_BIT;
-    conn_cfg.adv_handle = 0x0FF;
-    conn_cfg.sub_event = 0x0FF;
-
-    conn_cfg.scan_int[0] = conn_cfg.scan_int[1] = conn_cfg.scan_int[2] = 100;                    // 100*0.625ms=62.5ms
-    conn_cfg.scan_window[0] = conn_cfg.scan_window[1] = conn_cfg.scan_window[2] = 100;           // 100*0.625ms=62.5ms
-    conn_cfg.min_conn_int[0] = conn_cfg.min_conn_int[1] = conn_cfg.min_conn_int[2] = 28;         // 28*1.25ms=35ms
-    conn_cfg.max_conn_int[0] = conn_cfg.max_conn_int[1] = conn_cfg.max_conn_int[2] = 44;         // 44*1.25ms=55ms
-    conn_cfg.conn_latency[0] = conn_cfg.conn_latency[1] = conn_cfg.conn_latency[2] = 0;          // number of connection events
-    conn_cfg.supervision_to[0] = conn_cfg.supervision_to[1] = conn_cfg.supervision_to[2] = 1000; // 1000*10ms10s
-
-    result = wiced_bt_ble_cache_ext_conn_config(&conn_cfg);
+    /* set extended scan parameters */
+    result = wiced_ble_ext_scan_set_params(&scan_params);
+    if (WICED_SUCCESS != result)
+    {
+        printf("Error setting extended scan parameters\n");
+        CY_ASSERT(0);
+    }
 
     printf("[%s] Result: %d\n", __FUNCTION__, result);
 
@@ -877,8 +899,8 @@ void hello_client_app_timeout(WICED_TIMER_PARAM_TYPE arg)
 
     if (start_scan && wiced_bt_ble_get_current_scan_state() == BTM_BLE_SCAN_TYPE_NONE)
     {
-        status = wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_HIGH_DUTY, WICED_TRUE, hello_client_scan_result_cback);
-        printf("wiced_bt_ble_scan: %d\n", status);
+        status = wiced_ble_ext_scan_enable(1, &scan_enable);
+        printf("wiced_ble_ext_scan_enable: %d\n", status);
     }
     UNUSED_VARIABLE(status);
 }
@@ -908,17 +930,22 @@ void hello_client_encryption_changed(wiced_result_t result, uint8_t *p_bd_addr)
 /*
  * This function handles the scan results
  */
-void hello_client_scan_result_cback(wiced_bt_ble_scan_results_t *p_scan_result, uint8_t *p_adv_data)
+static void hello_client_ext_scan_result_cback(wiced_ble_ext_scan_results_t* p_scan_result, uint16_t adv_data_len, uint8_t* p_adv_data)
 {
     wiced_result_t status;
     wiced_bool_t ret_status;
-    uint8_t length;
-    uint8_t *p_data;
+    uint16_t length;
+    uint8_t* p_data;
+    wiced_bt_adv_ctx_t adv_ctx;
 
     if (p_scan_result)
     {
+        adv_ctx.adv_len = adv_data_len;
+        adv_ctx.offset = 0;
+        adv_ctx.p_adv = p_adv_data;
+
         // Advertisement data from hello_server should have Advertisement type SERVICE_UUID_128
-        p_data = wiced_bt_ble_check_advertising_data(p_adv_data, BTM_BLE_ADVERT_TYPE_128SRV_COMPLETE, &length);
+        p_data = wiced_ble_adv_data_search(&adv_ctx, BTM_BLE_ADVERT_TYPE_128SRV_COMPLETE, &length);
 
         // Check if  the hello service uuid is there in the advertisement
         if ((p_data == NULL) || (length != LEN_UUID_128) || (memcmp(p_data, hello_service, LEN_UUID_128) != 0))
@@ -935,17 +962,15 @@ void hello_client_scan_result_cback(wiced_bt_ble_scan_results_t *p_scan_result, 
 #endif
 
         /* Stop the scan since the desired device is found */
-        status = wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_NONE, WICED_TRUE, hello_client_scan_result_cback);
+        status = wiced_ble_ext_scan_enable(0, &scan_enable);
 
         printf("[%s] scan off status %d\n", __FUNCTION__, status);
 
         /* Initiate the connection */
-        ret_status = wiced_bt_gatt_le_connect(p_scan_result->remote_bd_addr,
-                                              p_scan_result->ble_addr_type,
-                                              BLE_CONN_MODE_HIGH_DUTY,
-                                              TRUE);
-
-        printf("[%s]  wiced_bt_gatt_connect returned status %d\n", __FUNCTION__, ret_status);
+        memcpy(conn_cfg.peer_addr, p_scan_result->remote_bd_addr, sizeof(wiced_bt_device_address_t));
+        conn_cfg.peer_addr_type = p_scan_result->ble_addr_type;
+        ret_status = wiced_ble_ext_create_connection(&conn_cfg);
+        printf("[%s]  wiced_ble_ext_create_connection returned status %d\n", __FUNCTION__, ret_status);
     }
     else
     {
